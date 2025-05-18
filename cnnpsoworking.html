@@ -1,0 +1,2657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN & PSO in License Plate Detection</title>
+    <style>
+        :root {
+            --primary: #4a6bff;
+            --secondary: #8c43ff;
+            --accent: #ff6b6b;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #28a745;
+            --info: #17a2b8;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(120deg, #f5f7fa, #e4e8f0);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        header {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* AI-powered dynamic shining effect */
+        .ai-shine {
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            transform: skewX(-20deg);
+            animation: shine-effect 8s infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes shine-effect {
+            0% {
+                left: -150%;
+            }
+            20% {
+                left: 150%;
+            }
+            100% {
+                left: 150%;
+            }
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        nav {
+            background-color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav-link {
+            color: var(--dark);
+            text-decoration: none;
+            padding: 0.5rem 1.5rem;
+            margin: 0 0.5rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Section shine effect */
+        .section-shine {
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(74, 107, 255, 0.1),
+                transparent
+            );
+            transform: skewX(-20deg);
+            pointer-events: none;
+        }
+        
+        h2 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-size: 2rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        h2::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+        
+        h3 {
+            color: var(--secondary);
+            margin: 1.5rem 0 1rem;
+            font-size: 1.5rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+        }
+        
+        .highlight {
+            color: var(--accent);
+            font-weight: 600;
+        }
+        
+        .demo-container {
+            position: relative;
+            height: 400px;
+            background-color: #f0f3f8;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 2rem 0;
+        }
+        
+        .plate-container {
+            position: relative;
+            width: 80%;
+            margin: 0 auto;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .license-plate {
+            width: 300px;
+            height: 150px;
+            background-color: white;
+            border: 5px solid #333;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #111;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative;
+            transition: all 0.5s ease;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            opacity: 0.6;
+            box-shadow: 0 0 8px rgba(74, 107, 255, 0.8);
+        }
+        
+        .detection-box {
+            position: absolute;
+            border: 3px dashed var(--success);
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+        
+        .step {
+            display: flex;
+            margin: 2rem 0;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .step-number {
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 60px;
+        }
+        
+        .step-content {
+            padding: 1rem;
+        }
+        
+        .step-title {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-top: 4px solid var(--primary);
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .info-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .info-card:nth-child(2) {
+            border-top-color: var(--secondary);
+        }
+        
+        .info-card:nth-child(3) {
+            border-top-color: var(--accent);
+        }
+        
+        .info-card h4 {
+            margin-bottom: 1rem;
+            color: var(--dark);
+            font-size: 1.25rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Button shine effect */
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover::after {
+            left: 100%;
+        }
+        
+        footer {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .footer-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .animate-cnn {
+            position: relative;
+            height: 300px;
+            background: #f0f3f8;
+            border-radius: 8px;
+            margin: 2rem 0;
+            overflow: hidden;
+        }
+        
+        .cnn-layer {
+            position: absolute;
+            background: rgba(74, 107, 255, 0.1);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            transition: all 1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        #timeline {
+            position: relative;
+            width: 100%;
+            margin: 2rem 0;
+            height: 50px;
+        }
+        
+        #progress {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0%;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        
+        #progress::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            background: var(--secondary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(140, 67, 255, 0.8);
+        }
+        
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .control-btn {
+            background-color: white;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 0.5rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .control-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        /* Enhanced styles for the demo section */
+        .comparison-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 2rem 0;
+        }
+
+        .comparison-card {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .comparison-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid;
+            text-align: center;
+        }
+
+        .cnn-title {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .pso-title {
+            color: var(--secondary);
+            border-color: var(--secondary);
+        }
+
+        .combined-title {
+            color: var(--success);
+            border-color: var(--success);
+        }
+
+        .comparison-image {
+            height: 200px;
+            background-color: #f0f3f8;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .license-plate-demo {
+            width: 200px;
+            height: 100px;
+            background-color: white;
+            border: 4px solid #333;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #111;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .blur-effect {
+            filter: blur(2px);
+        }
+
+        .accuracy-meter {
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .accuracy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--danger), var(--warning), var(--success));
+            border-radius: 5px;
+            transition: width 1s ease;
+        }
+
+        .accuracy-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .detection-box-demo {
+            position: absolute;
+            border: 2px dashed;
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+
+        .cnn-box {
+            border-color: var(--primary);
+        }
+
+        .pso-box {
+            border-color: var(--secondary);
+        }
+
+        .combined-box {
+            border-color: var(--success);
+        }
+
+        .comparison-description {
+            margin-top: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .key-metrics {
+            margin-top: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .metric {
+            flex: 1;
+            min-width: 100px;
+            background-color: #f8f9fa;
+            padding: 0.75rem;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .cnn-metric .metric-value {
+            color: var(--primary);
+        }
+
+        .pso-metric .metric-value {
+            color: var(--secondary);
+        }
+
+        .combined-metric .metric-value {
+            color: var(--success);
+        }
+
+        .architecture-diagram {
+            width: 100%;
+            height: 300px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin: 2rem 0;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .arch-box {
+            position: absolute;
+            background-color: white;
+            border-radius: 6px;
+            padding: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .arch-arrow {
+            position: absolute;
+            height: 2px;
+            background-color: #666;
+            transform-origin: left center;
+        }
+
+        .arch-arrow::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -4px;
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 8px solid #666;
+        }
+
+        .highlight-box {
+            border: 2px solid;
+            animation: highlight-pulse 2s infinite;
+        }
+
+        @keyframes highlight-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(140, 67, 255, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(140, 67, 255, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(140, 67, 255, 0);
+            }
+        }
+
+        .cnn-highlight {
+            border-color: var(--primary);
+        }
+
+        .pso-highlight {
+            border-color: var(--secondary);
+        }
+
+        .combined-highlight {
+            border-color: var(--success);
+        }
+        
+        /* NEW: Applications Menu Styles */
+        .applications-menu {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .app-tab {
+            padding: 0.75rem 1.5rem;
+            background-color: white;
+            border: 2px solid var(--primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .app-tab:hover, .app-tab.active {
+            background-color: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .app-tab::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            transition: all 0.5s ease;
+        }
+        
+        .app-tab:hover::after {
+            left: 100%;
+        }
+        
+        .app-content {
+            display: none;
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-top: 1rem;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .app-content.active {
+            display: block;
+        }
+        
+        .app-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .app-icon {
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 1rem;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .app-title {
+            flex: 1;
+        }
+        
+        .app-title h3 {
+            margin: 0 0 0.5rem 0;
+            color: var(--primary);
+        }
+        
+        .app-title p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .app-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+        
+        .app-description {
+            flex: 2;
+            min-width: 300px;
+        }
+        
+        .app-stats {
+            flex: 1;
+            min-width: 200px;
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+        
+        .stat-item {
+            margin-bottom: 1rem;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .app-features {
+            margin-top: 2rem;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-icon {
+            width: 24px;
+            height: 24px;
+            background-color: rgba(74, 107, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 1rem;
+            color: var(--primary);
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+        
+        .feature-text {
+            flex: 1;
+        }
+        
+        .feature-text h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1rem;
+        }
+        
+        .feature-text p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .app-demo {
+            margin-top: 2rem;
+            height: 200px;
+            background-color: #f0f3f8;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .app-demo-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .app-demo-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(74, 107, 255, 0.1), rgba(140, 67, 255, 0.1));
+            z-index: 1;
+        }
+        
+        .app-demo-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .app-demo-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            opacity: 0.4;
+        }
+        
+        /* AI Glow Effect for Elements */
+        .ai-glow {
+            position: relative;
+        }
+        
+        .ai-glow::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            border-radius: inherit;
+            background: linear-gradient(45deg, var(--primary), var(--secondary), var(--accent), var(--primary));
+            background-size: 400% 400%;
+            z-index: -1;
+            filter: blur(10px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            animation: glowAnimation 3s ease infinite;
+        }
+        
+        .ai-glow:hover::before {
+            opacity: 0.7;
+        }
+        
+        @keyframes glowAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        
+        /* Dynamic Explanation Animation */
+        .dynamic-explanation {
+            position: relative;
+            padding: 1rem;
+            background-color: rgba(74, 107, 255, 0.05);
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border-left: 4px solid var(--primary);
+            overflow: hidden;
+        }
+        
+        .typing-effect {
+            display: inline-block;
+            white-space: nowrap;
+            overflow: hidden;
+            border-right: 2px solid var(--primary);
+            animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+            margin: 0;
+        }
+        
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+        
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: var(--primary) }
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .nav-container {
+                flex-wrap: wrap;
+            }
+            
+            .nav-link {
+                margin-bottom: 0.5rem;
+            }
+            
+            .step {
+                flex-direction: column;
+            }
+            
+            .step-number {
+                min-width: 100%;
+            }
+            
+            .demo-container {
+                height: 300px;
+            }
+            
+            .license-plate {
+                width: 220px;
+                height: 110px;
+                font-size: 2rem;
+            }
+
+            .comparison-container {
+                flex-direction: column;
+            }
+
+            .comparison-card {
+                width: 100%;
+            }
+
+            .architecture-diagram {
+                height: 400px;
+            }
+            
+            .applications-menu {
+                flex-direction: column;
+            }
+            
+            .app-tab {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .app-details {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="ai-shine"></div>
+        <h1>CNN & PSO in License Plate Detection</h1>
+        <p class="tagline">Advanced AI Technologies for Automated Vehicle Recognition Systems</p>
+    </header>
+    
+    <nav>
+        <div class="nav-container">
+            <a href="#intro" class="nav-link active">Introduction</a>
+            <a href="#cnn" class="nav-link">CNN</a>
+            <a href="#pso" class="nav-link">PSO</a>
+            <a href="#integration" class="nav-link">Integration</a>
+            <a href="#applications" class="nav-link">Applications</a>
+            <a href="#demo" class="nav-link">Demo</a>
+            <a href="#architecture" class="nav-link">Architecture</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <section id="intro">
+            <div class="section-shine"></div>
+            <h2>Introduction to License Plate Detection</h2>
+            <p>License plate detection is a crucial component in intelligent transportation systems, traffic monitoring, and security applications. Modern approaches combine <span class="highlight">Convolutional Neural Networks (CNN)</span> for image processing with <span class="highlight">Particle Swarm Optimization (PSO)</span> algorithms to enhance detection accuracy and efficiency.</p>
+            
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="section-shine"></div>
+                    <h4>Challenges in License Plate Detection</h4>
+                    <p>Various illumination conditions, different plate designs, occlusions, and varied angles make license plate detection a challenging computer vision task.</p>
+                </div>
+                
+                <div class="info-card">
+                    <div class="section-shine"></div>
+                    <h4>CNN Benefits</h4>
+                    <p>CNNs excel at feature extraction from images, recognizing patterns regardless of position, and maintaining spatial relationships between pixels.</p>
+                </div>
+                
+                <div class="info-card">
+                    <div class="section-shine"></div>
+                    <h4>PSO Advantages</h4>
+                    <p>PSO optimizes detection by efficiently searching the parameter space, improving convergence speed and reducing computational overhead.</p>
+                </div>
+            </div>
+            
+            <p>This website explores how these two powerful technologies work together to create robust license plate detection systems.</p>
+            
+            <button class="btn" onclick="scrollToSection('cnn')">Learn About CNN <div class="ai-shine"></div></button>
+        </section>
+        
+        <section id="cnn">
+            <div class="section-shine"></div>
+            <h2>Convolutional Neural Networks (CNN)</h2>
+            <p>CNNs are specialized deep learning networks designed for processing data with a grid-like topology, such as images. Their architecture makes them particularly effective for license plate detection tasks.</p>
+            
+            <h3>CNN Architecture for License Plate Detection</h3>
+            
+            <div class="animate-cnn" id="cnn-animation">
+                <!-- CNN layers will be added here by JavaScript -->
+            </div>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Input Layer</div>
+                    <p>The original vehicle image is fed into the network after preprocessing to standardize size and normalize pixel values.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">Convolutional Layers</div>
+                    <p>Multiple convolutional filters extract features like edges, textures, and shapes that are characteristic of license plates.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">Pooling Layers</div>
+                    <p>Max pooling reduces dimensionality while preserving the most important features, making the network more efficient.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <div class="step-title">Fully Connected Layers</div>
+                    <p>These layers interpret the extracted features to classify regions as license plate or non-license plate areas.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <div class="step-title">Output Layer</div>
+                    <p>Provides bounding box coordinates for detected license plates along with confidence scores.</p>
+                </div>
+            </div>
+            
+            <button class="btn" onclick="scrollToSection('pso')">Learn About PSO <div class="ai-shine"></div></button>
+        </section>
+        
+        <section id="pso">
+            <div class="section-shine"></div>
+            <h2>Particle Swarm Optimization (PSO)</h2>
+            <p>PSO is a computational intelligence technique inspired by the social behavior of bird flocking or fish schooling. In license plate detection, PSO helps optimize the search for the best parameters and regions of interest.</p>
+            
+            <h3>How PSO Works in License Plate Detection</h3>
+            
+            <div class="demo-container" id="pso-animation">
+                <div class="plate-container">
+                    <div class="license-plate">ABC 1234</div>
+                    <!-- Particles will be added by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Initialization</div>
+                    <p>Particles (potential solutions) are randomly distributed across the image search space with random velocities.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">Fitness Evaluation</div>
+                    <p>Each particle's position is evaluated using a fitness function that measures how likely that region contains a license plate.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">Update Personal & Global Best</div>
+                    <p>Each particle remembers its best position (personal best) and is informed of the swarm's best position (global best).</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <div class="step-title">Velocity & Position Update</div>
+                    <p>Particles adjust their velocities based on their personal best and the global best, then update their positions accordingly.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <div class="step-title">Convergence</div>
+                    <p>The process repeats until particles converge on the optimal solution—the most likely license plate location.</p>
+                </div>
+            </div>
+            
+            <button class="btn" onclick="scrollToSection('integration')">See How They Work Together <div class="ai-shine"></div></button>
+        </section>
+        
+        <section id="integration">
+            <div class="section-shine"></div>
+            <h2>Integration of CNN and PSO</h2>
+            <p>The integration of CNN and PSO creates a powerful synergy that enhances license plate detection performance. Here's how these technologies complement each other:</p>
+            
+            <h3>CNN-PSO Pipeline</h3>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Initial Detection with CNN</div>
+                    <p>The CNN performs an initial scan of the image to identify potential license plate regions with varying confidence levels.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">Parameter Optimization with PSO</div>
+                    <p>PSO optimizes detection parameters such as threshold values, aspect ratios, and region proposal settings to improve accuracy.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">Region Refinement</div>
+                    <p>Using the optimized parameters, the system refines the bounding boxes around potential license plates.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <div class="step-title">Feature-Guided PSO</div>
+                    <p>The features extracted by CNN guide the PSO particles toward promising regions, accelerating convergence.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <div class="step-title">Final Detection & Verification</div>
+                    <p>The integrated system produces final license plate localizations with high precision and recall rates.</p>
+                </div>
+            </div>
+            
+            <h3>Benefits of Integration</h3>
+            
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="section-shine"></div>
+                    <h4>Higher Accuracy</h4>
+                    <p>The combined approach achieves higher detection rates across various environmental conditions and plate types.</p>
+                </div>
+                
+                <div class="info-card">
+                    <div class="section-shine"></div>
+                    <h4>Faster Convergence</h4>
+                    <p>CNN-guided PSO converges more quickly on the optimal solution than either method alone.</p>
+                </div>
+                
+                <div class="info-card">
+                    <div class="section-shine"></div>
+                    <h4>Robustness</h4>
+                    <p>The hybrid system is more robust to noise, occlusions, and varying lighting conditions.</p>
+                </div>
+                
+                <div class="info-card">
+                    <div class="section-shine"></div>
+                    <h4>Adaptability</h4>
+                    <p>The system can adapt to different license plate formats and standards without extensive retraining.</p>
+                </div>
+            </div>
+            
+            <button class="btn" onclick="scrollToSection('applications')">Explore Applications <div class="ai-shine"></div></button>
+        </section>
+        
+        <!-- NEW: Applications Section -->
+        <section id="applications">
+            <div class="section-shine"></div>
+            <h2>Real-World Applications</h2>
+            <p>CNN and PSO-based license plate detection technology has numerous practical applications across various industries. Explore these five key applications to understand how this technology is transforming real-world systems.</p>
+            
+            <div class="applications-menu">
+                <div class="app-tab" data-app="traffic">Traffic Management</div>
+                <div class="app-tab" data-app="security">Security Systems</div>
+                <div class="app-tab" data-app="parking">Smart Parking</div>
+                <div class="app-tab" data-app="toll">Toll Collection</div>
+                <div class="app-tab" data-app="law">Law Enforcement</div>
+            </div>
+            
+            <div id="app-traffic" class="app-content">
+                <div class="app-header">
+                    <div class="app-icon ai-glow">🚦</div>
+                    <div class="app-title">
+                        <h3>Intelligent Traffic Management</h3>
+                        <p>Optimizing traffic flow through automated vehicle monitoring</p>
+                    </div>
+                </div>
+                
+                <div class="app-details">
+                    <div class="app-description">
+                        <p>Intelligent Traffic Management systems use CNN-PSO license plate detection to monitor traffic patterns, identify congestion points, and optimize traffic light timing. By tracking vehicles through their license plates, these systems can:</p>
+                        
+                        <div class="dynamic-explanation">
+                            <p class="typing-effect" id="traffic-explanation">AI analyzes real-time traffic data to predict congestion patterns and optimize traffic flow.</p>
+                        </div>
+                        
+                        <div class="app-features">
+                            <div class="feature-item">
+                                <div class="feature-icon">1</div>
+                                <div class="feature-text">
+                                    <h4>Real-time Traffic Monitoring</h4>
+                                    <p>Track vehicle movement across multiple intersections to create comprehensive traffic flow maps.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="feature-item">
+                                <div class="feature-icon">2</div>
+                                <div class="feature-text">
+                                    <h4>Adaptive Traffic Signal Control</h4>
+                                    <p>Automatically adjust traffic light timing based on current traffic volume and patterns.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="feature-item">
+                                <div class="feature-icon">3</div>
+                                <div class="feature-text">
+                                    <h4>Congestion Prediction</h4>
+                                    <p>Use historical and real-time data to predict and prevent traffic congestion before it occurs.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="app-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Average Traffic Reduction</div>
+                            <div class="stat-value">23%</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Detection Accuracy</div>
+                            <div class="stat-value">97.8%</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Processing Time</div>
+                            <div class="stat-value">0.3s</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Implementation Cost Savings</div>
+                            <div class="stat-value">35%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="app-demo">
+                    <div class="app-demo-bg"></div>
+                    <div class="app-demo-particles" id="traffic-particles"></div>
+                    <div class="app-demo-content">
+                        <div class="license-plate-demo">TRF 123</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="app-security" class="app-content">
+                <div class="app-header">
+                    <div class="app-icon ai-glow">🔒</div>
+                    <div class="app-title">
+                        <h3>Advanced Security Systems</h3>
+                        <p>Enhancing facility security through automated vehicle identification</p>
+                    </div>
+                </div>
+                
+                <div class="app-details">
+                    <div class="app-description">
+                        <p>Security systems leverage CNN-PSO license plate detection to control access to secure facilities, track visitor vehicles, and maintain comprehensive security logs. These systems provide:</p>
+                        
+                        <div class="dynamic-explanation">
+                            <p class="typing-effect" id="security-explanation">AI-powered security systems can identify unauthorized vehicles and alert security personnel in real-time.</p>
+                        </div>
+                        
+                        <div class="app-features">
+                            <div class="feature-item">
+                                <div class="feature-icon">1</div>
+                                <div class="feature-text">
+                                    <h4>Automated Gate Control</h4>
+                                    <p>Automatically open gates for authorized vehicles based on license plate recognition.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="feature-item">
+                                <div class="feature-icon">2</div>
+                                <div class="feature-text">
+                                    <h4>Visitor Management</h4>
+                                    <p>Track and log all vehicles entering and exiting the premises with timestamps.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="feature-item">
+                                <div class="feature-icon">3</div>
+                                <div class="feature-text">
+                                    <h4>Blacklist Alerts</h4>
+                                    <p>Instantly alert security personnel when blacklisted vehicles are detected.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="app-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Security Breach Reduction</div>
+                            <div class="stat-value">89%</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Recognition Speed</div>
+                            <div class="stat-value">0.5s</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">False Positive Rate</div>
+                            <div class="stat-value">0.02%</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Security Staff Efficiency</div>
+                            <div class="stat-value">+65%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="app-demo">
+                    <div class="app-demo-bg"></div>
+                    <div class="app-demo-particles" id="security-particles"></div>
+                    <div class="app-demo-content">
+                        <div class="license-plate-demo">SEC 456</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="app-parking" class="app-content">
+                <div class="app-header">
+                    <div class="app-icon ai-glow">🅿️</div>
+                    <div class="app-title">
+                        <h3>Smart Parking Solutions</h3>
+                        <p>Revolutionizing parking management with automated vehicle tracking</p>
+                    </div>
+                </div>
+                
+                <div class="app-details">
+                    <div class="app-description">
+                        <p>Smart parking systems use CNN-PSO license plate detection to automate parking fee collection, monitor parking space usage, and provide real-time availability information. These systems offer:</p>
+                        
+                        <div class="dynamic-explanation">
+                            <p class="typing-effect" id="parking-explanation">AI systems track parking space availability and guide drivers to open spots, reducing search time by up to 30%.</p>
+                        </div>
+                        
+                        <div class="app-features">
+                            <div class="feature-item">
+                                <div class="feature-icon">1</div>
+                                <div class="feature-text">
+                                    <h4>Ticketless Parking</h4>
+                                    <p>Automatically track entry and exit times based on license plate recognition for seamless billing.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="feature-item">
+                                <div class="feature-icon">2</div>
+                                <div class="feature-text">
+                                    <h4>Space Availability Tracking</h4>
+                                    <p>Monitor and display real-time parking space availability to drivers.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="feature-item">
+                                <div class="feature-icon">3</div>
+                                <div class="feature-text">
+                                    <h4>Reserved Parking Management</h4>
+                                    <p>Automatically enforce reserved parking spaces by identifying authorized vehicles.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="app-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Parking Efficiency Increase</div>
+                            <div class="stat-value">42%</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Average Time Saved</div>
+                            <div class="stat-value">7.5 min</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Revenue Increase</div>
+                            <div class="stat-value">28%</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Customer Satisfaction</div>
+                            <div class="stat-value">92%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="app-demo">
+                    <div class="app-demo-bg"></div>
+                    <div class="app-demo-particles" id="parking-particles"></div>
+                    <div class="app-demo-content">
+                        <div class="license-plate-demo">PRK 789</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="app-toll" class="app-content">
+                <div class="app-header">
+                    <div class="app-icon ai-glow">🛣️</div>
+                    <div class="app-title">
+                        <h3>Automated Toll Collection</h3>
+                        <p>Streamlining highway toll operations with contactless payment systems</p>
+                    </div>
+                </div>
+                
+                <div class="app-details">
+                    <div class="app-description">
+                        <p>Automated toll collection systems use CNN-PSO license plate detection to enable contactless toll payments, reduce traffic congestion at toll plazas, and improve revenue collection. These systems provide:</p>
+                        
+                        <div class="dynamic-explanation">
+                            <p class="typing-effect" id="toll-explanation">AI-powered toll systems can process vehicles at highway speeds, eliminating the need to slow down or stop at toll booths.</p>
+                        </div>
+                        
+                        <div class="app-features">
+                            <div class="feature-item">
+                                <div class="feature-icon">1</div>
+                                <div class="feature-text">
+                                    <h4>Open Road Tolling</h4>
+                                    <p>Allow vehicles to pass through toll points at highway speeds without stopping.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="feature-item">
+                                <div class="feature-icon">2</div>
+                                <div class="feature-text">
+                                    <h4>Automated Billing</h4>
+                                    <p>Automatically bill registered vehicle owners or deduct from prepaid accounts.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="feature-item">
+                                <div class="feature-icon">3</div>
+                                <div class="feature-text">
+                                    <h4>Violation Enforcement</h4>
+                                    <p>Identify and process toll violations through accurate license plate recognition.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="app-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Traffic Flow Improvement</div>
+                            <div class="stat-value">300%</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Operating Cost Reduction</div>
+                            <div class="stat-value">75%</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Revenue Collection Rate</div>
+                            <div class="stat-value">99.3%</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Environmental Impact</div>
+                            <div class="stat-value">-40%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="app-demo">
+                    <div class="app-demo-bg"></div>
+                    <div class="app-demo-particles" id="toll-particles"></div>
+                    <div class="app-demo-content">
+                        <div class="license-plate-demo">TLL 321</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="app-law" class="app-content">
+                <div class="app-header">
+                    <div class="app-icon ai-glow">👮</div>
+                    <div class="app-title">
+                        <h3>Law Enforcement Applications</h3>
+                        <p>Enhancing public safety through automated vehicle identification</p>
+                    </div>
+                </div>
+                
+                <div class="app-details">
+                    <div class="app-description">
+                        <p>Law enforcement agencies use CNN-PSO license plate detection to identify stolen vehicles, track vehicles of interest, and automate traffic violation enforcement. These systems enable:</p>
+                        
+                        <div class="dynamic-explanation">
+                            <p class="typing-effect" id="law-explanation">AI systems can scan thousands of vehicles per hour, instantly alerting officers when vehicles of interest are detected.</p>
+                        </div>
+                        
+                        <div class="app-features">
+                            <div class="feature-item">
+                                <div class="feature-icon">1</div>
+                                <div class="feature-text">
+                                    <h4>Stolen Vehicle Recovery</h4>
+                                    <p>Automatically identify and track stolen vehicles reported in police databases.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="feature-item">
+                                <div class="feature-icon">2</div>
+                                <div class="feature-text">
+                                    <h4>Automated Traffic Enforcement</h4>
+                                    <p>Detect and document traffic violations such as speeding or running red lights.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="feature-item">
+                                <div class="feature-icon">3</div>
+                                <div class="feature-text">
+                                    <h4>Investigation Support</h4>
+                                    <p>Provide vehicle movement data to support criminal investigations and establish timelines.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="app-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Vehicle Recovery Rate</div>
+                            <div class="stat-value">68%</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Traffic Violation Reduction</div>
+                            <div class="stat-value">47%</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Investigation Time Saved</div>
+                            <div class="stat-value">62%</div>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <div class="stat-label">Public Safety Improvement</div>
+                            <div class="stat-value">38%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="app-demo">
+                    <div class="app-demo-bg"></div>
+                    <div class="app-demo-particles" id="law-particles"></div>
+                    <div class="app-demo-content">
+                        <div class="license-plate-demo">POL 911</div>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn" onclick="scrollToSection('demo')">See It In Action <div class="ai-shine"></div></button>
+        </section>
+        
+        <section id="demo">
+            <div class="section-shine"></div>
+            <h2>Interactive Demonstration</h2>
+            <p>This interactive demo clearly illustrates the differences between using CNN alone, PSO alone, and the combined CNN+PSO approach for license plate detection. See how each method performs in terms of accuracy, speed, and robustness.</p>
+            
+            <div class="control-buttons">
+                <button class="control-btn" id="cnn-only-btn">CNN Only</button>
+                <button class="control-btn" id="pso-only-btn">PSO Only</button>
+                <button class="control-btn" id="combined-btn">CNN + PSO</button>
+                <button class="control-btn" id="reset-demo">Reset</button>
+            </div>
+            
+            <div class="comparison-container">
+                <div class="comparison-card">
+                    <div class="comparison-title cnn-title">CNN Only</div>
+                    <div class="comparison-image" id="cnn-demo">
+                        <div class="license-plate-demo" id="cnn-plate">XYZ 789</div>
+                        <div class="detection-box-demo cnn-box" id="cnn-detection-box"></div>
+                    </div>
+                    <div class="accuracy-meter">
+                        <div class="accuracy-fill" id="cnn-accuracy" style="width: 0%"></div>
+                    </div>
+                    <div class="accuracy-label">
+                        <span>Low</span>
+                        <span>Medium</span>
+                        <span>High</span>
+                    </div>
+                    <div class="comparison-description">
+                        <p>CNN-only detection provides good initial feature extraction but may result in less precise bounding boxes and lower confidence scores. The detection is often blurry and less accurate in challenging conditions.</p>
+                    </div>
+                    <div class="key-metrics">
+                        <div class="metric cnn-metric">
+                            <div class="metric-value" id="cnn-speed">0.0s</div>
+                            <div class="metric-label">Detection Time</div>
+                        </div>
+                        <div class="metric cnn-metric">
+                            <div class="metric-value" id="cnn-precision">0%</div>
+                            <div class="metric-label">Precision</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="comparison-card">
+                    <div class="comparison-title pso-title">PSO Only</div>
+                    <div class="comparison-image" id="pso-demo">
+                        <div class="license-plate-demo" id="pso-plate">XYZ 789</div>
+                        <div class="detection-box-demo pso-box" id="pso-detection-box"></div>
+                    </div>
+                    <div class="accuracy-meter">
+                        <div class="accuracy-fill" id="pso-accuracy" style="width: 0%"></div>
+                    </div>
+                    <div class="accuracy-label">
+                        <span>Low</span>
+                        <span>Medium</span>
+                        <span>High</span>
+                    </div>
+                    <div class="comparison-description">
+                        <p>PSO-only detection excels at parameter optimization but lacks the feature extraction capabilities of CNN. It can provide better precision than CNN alone but may struggle with initial region identification.</p>
+                    </div>
+                    <div class="key-metrics">
+                        <div class="metric pso-metric">
+                            <div class="metric-value" id="pso-speed">0.0s</div>
+                            <div class="metric-label">Detection Time</div>
+                        </div>
+                        <div class="metric pso-metric">
+                            <div class="metric-value" id="pso-precision">0%</div>
+                            <div class="metric-label">Precision</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="comparison-card">
+                    <div class="comparison-title combined-title">CNN + PSO</div>
+                    <div class="comparison-image" id="combined-demo">
+                        <div class="license-plate-demo" id="combined-plate">XYZ 789</div>
+                        <div class="detection-box-demo combined-box" id="combined-detection-box"></div>
+                    </div>
+                    <div class="accuracy-meter">
+                        <div class="accuracy-fill" id="combined-accuracy" style="width: 0%"></div>
+                    </div>
+                    <div class="accuracy-label">
+                        <span>Low</span>
+                        <span>Medium</span>
+                        <span>High</span>
+                    </div>
+                    <div class="comparison-description">
+                        <p>The combined CNN+PSO approach leverages the strengths of both methods. CNN provides robust feature extraction while PSO optimizes the detection parameters, resulting in higher accuracy, clearer detection, and better performance in challenging conditions.</p>
+                    </div>
+                    <div class="key-metrics">
+                        <div class="metric combined-metric">
+                            <div class="metric-value" id="combined-speed">0.0s</div>
+                            <div class="metric-label">Detection Time</div>
+                        </div>
+                        <div class="metric combined-metric">
+                            <div class="metric-value" id="combined-precision">0%</div>
+                            <div class="metric-label">Precision</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Detection Process Explanation</h3>
+            <p id="explanation-text">Select one of the detection methods above to see how it performs. The demonstration will show the detection process, accuracy, and key metrics for each approach.</p>
+        </section>
+        
+        <section id="architecture">
+            <div class="section-shine"></div>
+            <h2>CNN and PSO Architecture Comparison</h2>
+            <p>This section provides a clear visual comparison of the CNN architecture, PSO algorithm, and the integrated CNN+PSO approach. Understanding these architectures helps explain why the combined approach delivers superior results.</p>
+            
+            <div class="architecture-diagram" id="architecture-diagram">
+                <!-- Architecture diagram will be added by JavaScript -->
+            </div>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">CNN Architecture</div>
+                    <p>CNN uses a hierarchical structure of convolutional layers, pooling layers, and fully connected layers to extract features and make predictions. While powerful for feature extraction, CNN alone may struggle with parameter optimization.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">PSO Algorithm</div>
+                    <p>PSO uses a swarm of particles that explore the solution space to find optimal parameters. While effective for optimization, PSO alone lacks the feature extraction capabilities needed for complex image analysis.</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">Integrated CNN+PSO Approach</div>
+                    <p>The integrated approach uses CNN for initial feature extraction and region proposal, then applies PSO to optimize detection parameters. This combination results in higher accuracy, better precision, and more robust performance.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <footer>
+        <div class="ai-shine"></div>
+        <div class="footer-content">
+            <h3>CNN & PSO in License Plate Detection</h3>
+            <p>An interactive guide to understanding advanced computer vision and optimization techniques in vehicle identification systems.</p>
+        </div>
+    </footer>
+    
+    <script>
+        // Intersection Observer for section animations
+        const sections = document.querySelectorAll('section');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    
+                    // Trigger section shine effect
+                    const shine = entry.target.querySelector('.section-shine');
+                    if (shine) {
+                        shine.style.animation = 'none';
+                        setTimeout(() => {
+                            shine.style.animation = 'shine-effect 3s';
+                        }, 100);
+                    }
+                }
+            });
+        }, { threshold: 0.2 });
+        
+        sections.forEach(section => {
+            observer.observe(section);
+        });
+        
+        // Smooth scrolling for navigation
+        function scrollToSection(id) {
+            const section = document.getElementById(id);
+            window.scrollTo({
+                top: section.offsetTop - 80,
+                behavior: 'smooth'
+            });
+            
+            // Update active nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + id) {
+                    link.classList.add('active');
+                }
+            });
+        }
+        
+        // Update active nav link on scroll
+        window.addEventListener('scroll', () => {
+            let current = '';
+            
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (pageYOffset >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+        
+        // CNN Animation
+        function createCNNAnimation() {
+            const container = document.getElementById('cnn-animation');
+            container.innerHTML = '';
+            
+            const layers = [
+                { name: 'Input Layer', width: '80%', height: '70%', left: '10%', top: '15%', zIndex: 1 },
+                { name: 'Conv Layer 1', width: '70%', height: '60%', left: '15%', top: '20%', zIndex: 2 },
+                { name: 'Pool Layer 1', width: '60%', height: '50%', left: '20%', top: '25%', zIndex: 3 },
+                { name: 'Conv Layer 2', width: '50%', height: '40%', left: '25%', top: '30%', zIndex: 4 },
+                { name: 'Pool Layer 2', width: '40%', height: '30%', left: '30%', top: '35%', zIndex: 5 },
+                { name: 'Fully Connected', width: '30%', height: '20%', left: '35%', top: '40%', zIndex: 6 },
+                { name: 'Output', width: '20%', height: '10%', left: '40%', top: '45%', zIndex: 7 }
+            ];
+            
+            layers.forEach((layer, index) => {
+                const layerEl = document.createElement('div');
+                layerEl.className = 'cnn-layer';
+                layerEl.innerHTML = layer.name;
+                layerEl.style.width = layer.width;
+                layerEl.style.height = layer.height;
+                layerEl.style.left = layer.left;
+                layerEl.style.top = layer.top;
+                layerEl.style.zIndex = layer.zIndex;
+                layerEl.style.opacity = 0;
+                
+                container.appendChild(layerEl);
+                
+                setTimeout(() => {
+                    layerEl.style.opacity = 1;
+                }, index * 300);
+            });
+        }
+        
+        // PSO Animation
+        function createPSOAnimation() {
+            const container = document.getElementById('pso-animation');
+            const plateContainer = container.querySelector('.plate-container');
+            
+            // Remove existing particles
+            document.querySelectorAll('.particle').forEach(p => p.remove());
+            
+            // Create particles
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // Random position within container
+                const left = Math.random() * 80 + 10; // 10% to 90%
+                const top = Math.random() * 80 + 10; // 10% to 90%
+                
+                particle.style.left = `${left}%`;
+                particle.style.top = `${top}%`;
+                
+                plateContainer.appendChild(particle);
+                
+                // Animate particle
+                animateParticle(particle);
+            }
+        }
+        
+        function animateParticle(particle) {
+            const plate = document.querySelector('.license-plate');
+            const plateRect = plate.getBoundingClientRect();
+            const containerRect = particle.parentElement.getBoundingClientRect();
+            
+            // Calculate relative plate position within container
+            const targetLeft = ((plateRect.left + plateRect.width / 2) - containerRect.left) / containerRect.width * 100;
+            const targetTop = ((plateRect.top + plateRect.height / 2) - containerRect.top) / containerRect.height * 100;
+            
+            // Current position
+            const currentLeft = parseFloat(particle.style.left);
+            const currentTop = parseFloat(particle.style.top);
+            
+            // Calculate new position with some randomness
+            let newLeft = currentLeft + (targetLeft - currentLeft) * 0.05 + (Math.random() - 0.5) * 3;
+            let newTop = currentTop + (targetTop - currentTop) * 0.05 + (Math.random() - 0.5) * 3;
+            
+            // Keep within bounds
+            newLeft = Math.max(0, Math.min(100, newLeft));
+            newTop = Math.max(0, Math.min(100, newTop));
+            
+            // Update position
+            particle.style.left = `${newLeft}%`;
+            particle.style.top = `${newTop}%`;
+            
+            // Continue animation
+            setTimeout(() => {
+                animateParticle(particle);
+            }, 100);
+        }
+        
+        // Enhanced Demo Functions
+        function resetDemo() {
+            // Reset all plates and detection boxes
+            document.querySelectorAll('.license-plate-demo').forEach(plate => {
+                plate.classList.remove('blur-effect');
+                plate.style.filter = '';
+            });
+            
+            document.querySelectorAll('.detection-box-demo').forEach(box => {
+                box.style.opacity = '0';
+            });
+            
+            // Reset accuracy meters
+            document.getElementById('cnn-accuracy').style.width = '0%';
+            document.getElementById('pso-accuracy').style.width = '0%';
+            document.getElementById('combined-accuracy').style.width = '0%';
+            
+            // Reset metrics
+            document.getElementById('cnn-speed').textContent = '0.0s';
+            document.getElementById('pso-speed').textContent = '0.0s';
+            document.getElementById('combined-speed').textContent = '0.0s';
+            
+            document.getElementById('cnn-precision').textContent = '0%';
+            document.getElementById('pso-precision').textContent = '0%';
+            document.getElementById('combined-precision').textContent = '0%';
+            
+            // Reset explanation
+            document.getElementById('explanation-text').textContent = 'Select one of the detection methods above to see how it performs. The demonstration will show the detection process, accuracy, and key metrics for each approach.';
+            
+            // Reset button states
+            document.querySelectorAll('.control-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+        }
+        
+        function startCNNDemo() {
+            resetDemo();
+            document.getElementById('cnn-only-btn').classList.add('active');
+            
+            // Update explanation
+            document.getElementById('explanation-text').textContent = 'CNN-only detection is processing the image. Notice how the detection is less precise and the license plate appears slightly blurry, indicating lower confidence in the detection.';
+            
+            // Simulate CNN processing
+            setTimeout(() => {
+                // Add blur effect to show lower quality detection
+                document.getElementById('cnn-plate').classList.add('blur-effect');
+                
+                // Show detection box with slight offset (less accurate)
+                const plate = document.getElementById('cnn-plate');
+                const plateRect = plate.getBoundingClientRect();
+                const containerRect = document.getElementById('cnn-demo').getBoundingClientRect();
+                
+                const detectionBox = document.getElementById('cnn-detection-box');
+                detectionBox.style.left = `${((plateRect.left - containerRect.left) / containerRect.width * 100) - 3}%`;
+                detectionBox.style.top = `${((plateRect.top - containerRect.top) / containerRect.height * 100) - 3}%`;
+                detectionBox.style.width = `${(plateRect.width / containerRect.width * 100) + 6}%`;
+                detectionBox.style.height = `${(plateRect.height / containerRect.height * 100) + 6}%`;
+                detectionBox.style.opacity = '1';
+                
+                // Update accuracy meter
+                document.getElementById('cnn-accuracy').style.width = '60%';
+                
+                // Update metrics
+                document.getElementById('cnn-speed').textContent = '1.2s';
+                document.getElementById('cnn-precision').textContent = '78%';
+                
+                // Update explanation
+                document.getElementById('explanation-text').textContent = 'CNN-only detection complete. The detection is less precise with a 78% accuracy rate. Notice the blurry appearance and slightly offset bounding box, indicating lower confidence in the detection.';
+            }, 1500);
+        }
+        
+        function startPSODemo() {
+            resetDemo();
+            document.getElementById('pso-only-btn').classList.add('active');
+            
+            // Update explanation
+            document.getElementById('explanation-text').textContent = 'PSO-only detection is initializing particles across the search space to find the optimal license plate location.';
+            
+            // Create particles for PSO demo
+            const container = document.getElementById('pso-demo');
+            
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.backgroundColor = 'var(--secondary)';
+                
+                // Random position within container
+                const left = Math.random() * 100;
+                const top = Math.random() * 100;
+                
+                particle.style.left = `${left}%`;
+                particle.style.top = `${top}%`;
+                
+                container.appendChild(particle);
+            }
+            
+            // Simulate PSO processing
+            setTimeout(() => {
+                // Move particles gradually closer to plate
+                const plate = document.getElementById('pso-plate');
+                const plateRect = plate.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                
+                document.querySelectorAll('#pso-demo .particle').forEach(p => {
+                    const targetLeft = ((plateRect.left + plateRect.width / 2) - containerRect.left) / containerRect.width * 100;
+                    const targetTop = ((plateRect.top + plateRect.height / 2) - containerRect.top) / containerRect.height * 100;
+                    
+                    // Random position near plate
+                    const offsetX = (Math.random() - 0.5) * 15;
+                    const offsetY = (Math.random() - 0.5) * 15;
+                    
+                    p.style.left = `${targetLeft + offsetX}%`;
+                    p.style.top = `${targetTop + offsetY}%`;
+                });
+                
+                // Update explanation
+                document.getElementById('explanation-text').textContent = 'PSO particles are converging on the optimal solution, but without CNN feature extraction, they struggle to precisely identify the license plate boundaries.';
+                
+                // Update accuracy meter
+                document.getElementById('pso-accuracy').style.width = '40%';
+                
+                // Update metrics
+                document.getElementById('pso-speed').textContent = '0.8s';
+                document.getElementById('pso-precision').textContent = '65%';
+                
+                // Show detection box with inaccuracy
+                const detectionBox = document.getElementById('pso-detection-box');
+                detectionBox.style.left = `${((plateRect.left - containerRect.left) / containerRect.width * 100) + 2}%`;
+                detectionBox.style.top = `${((plateRect.top - containerRect.top) / containerRect.height * 100) + 2}%`;
+                detectionBox.style.width = `${(plateRect.width / containerRect.width * 100) - 4}%`;
+                detectionBox.style.height = `${(plateRect.height / containerRect.height * 100) - 4}%`;
+                detectionBox.style.opacity = '1';
+                
+                // Final update after particles converge
+                setTimeout(() => {
+                    document.getElementById('explanation-text').textContent = 'PSO-only detection complete. While faster than CNN, the accuracy is lower at 65%. PSO struggles with initial feature identification but excels at parameter optimization.';
+                }, 1500);
+            }, 1500);
+        }
+        
+        function startCombinedDemo() {
+            resetDemo();
+            document.getElementById('combined-btn').classList.add('active');
+            
+            // Update explanation
+            document.getElementById('explanation-text').textContent = 'The combined CNN+PSO approach is processing the image. CNN extracts features while PSO optimizes the detection parameters.';
+            
+            // Create particles for combined demo
+            const container = document.getElementById('combined-demo');
+            
+            for (let i = 0; i < 15; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.backgroundColor = 'var(--success)';
+                
+                // Random position within container
+                const left = Math.random() * 100;
+                const top = Math.random() * 100;
+                
+                particle.style.left = `${left}%`;
+                particle.style.top = `${top}%`;
+                
+                container.appendChild(particle);
+            }
+            
+            // Simulate combined processing
+            setTimeout(() => {
+                // Move particles precisely to plate
+                const plate = document.getElementById('combined-plate');
+                const plateRect = plate.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                
+                document.querySelectorAll('#combined-demo .particle').forEach(p => {
+                    const targetLeft = ((plateRect.left + plateRect.width / 2) - containerRect.left) / containerRect.width * 100;
+                    const targetTop = ((plateRect.top + plateRect.height / 2) - containerRect.top) / containerRect.height * 100;
+                    
+                    // Very small random offset for high precision
+                    const offsetX = (Math.random() - 0.5) * 5;
+                    const offsetY = (Math.random() - 0.5) * 5;
+                    
+                    p.style.left = `${targetLeft + offsetX}%`;
+                    p.style.top = `${targetTop + offsetY}%`;
+                });
+                
+                // Update explanation
+                document.getElementById('explanation-text').textContent = 'CNN+PSO integration is providing precise feature extraction and optimal parameter tuning, resulting in highly accurate detection.';
+                
+                // Update accuracy meter
+                document.getElementById('combined-accuracy').style.width = '95%';
+                
+                // Update metrics
+                document.getElementById('combined-speed').textContent = '1.5s';
+                document.getElementById('combined-precision').textContent = '96%';
+                
+                // Show precise detection box
+                const detectionBox = document.getElementById('combined-detection-box');
+                detectionBox.style.left = `${(plateRect.left - containerRect.left) / containerRect.width * 100}%`;
+                detectionBox.style.top = `${(plateRect.top - containerRect.top) / containerRect.height * 100}%`;
+                detectionBox.style.width = `${plateRect.width / containerRect.width * 100}%`;
+                detectionBox.style.height = `${plateRect.height / containerRect.height * 100}%`;
+                detectionBox.style.opacity = '1';
+                
+                // Final update
+                setTimeout(() => {
+                    // Remove particles for cleaner view
+                    document.querySelectorAll('#combined-demo .particle').forEach(p => {
+                        p.remove();
+                    });
+                    
+                    document.getElementById('explanation-text').textContent = 'CNN+PSO detection complete with 96% accuracy. The combined approach provides the highest precision and clearest detection by leveraging CNN for feature extraction and PSO for parameter optimization.';
+                }, 1500);
+            }, 1500);
+        }
+        
+        // Architecture Diagram
+        function createArchitectureDiagram() {
+            const container = document.getElementById('architecture-diagram');
+            container.innerHTML = '';
+            
+            // CNN Architecture
+            const cnnBox = document.createElement('div');
+            cnnBox.className = 'arch-box';
+            cnnBox.innerHTML = 'CNN Architecture';
+            cnnBox.style.width = '25%';
+            cnnBox.style.height = '20%';
+            cnnBox.style.left = '10%';
+            cnnBox.style.top = '10%';
+            cnnBox.style.backgroundColor = 'rgba(74, 107, 255, 0.1)';
+            cnnBox.style.border = '2px solid var(--primary)';
+            container.appendChild(cnnBox);
+            
+            // CNN Components
+            const cnnComponents = [
+                { name: 'Conv Layers', left: '15%', top: '35%', width: '15%', height: '15%' },
+                { name: 'Pooling', left: '15%', top: '55%', width: '15%', height: '15%' },
+                { name: 'FC Layers', left: '15%', top: '75%', width: '15%', height: '15%' }
+            ];
+            
+            cnnComponents.forEach(comp => {
+                const box = document.createElement('div');
+                box.className = 'arch-box';
+                box.innerHTML = comp.name;
+                box.style.width = comp.width;
+                box.style.height = comp.height;
+                box.style.left = comp.left;
+                box.style.top = comp.top;
+                box.style.backgroundColor = 'rgba(74, 107, 255, 0.05)';
+                box.style.border = '1px solid var(--primary)';
+                container.appendChild(box);
+                
+                // Arrow from CNN to component
+                if (comp.name === 'Conv Layers') {
+                    createArrow(container, 
+                        parseInt(cnnBox.style.left) + parseInt(cnnBox.style.width) / 2, 
+                        parseInt(cnnBox.style.top) + parseInt(cnnBox.style.height), 
+                        parseInt(comp.left) + parseInt(comp.width) / 2, 
+                        parseInt(comp.top),
+                        'var(--primary)'
+                    );
+                } else {
+                    const prevComp = cnnComponents[cnnComponents.indexOf(comp) - 1];
+                    createArrow(container, 
+                        parseInt(prevComp.left) + parseInt(prevComp.width) / 2, 
+                        parseInt(prevComp.top) + parseInt(prevComp.height), 
+                        parseInt(comp.left) + parseInt(comp.width) / 2, 
+                        parseInt(comp.top),
+                        'var(--primary)'
+                    );
+                }
+            });
+            
+            // PSO Architecture
+            const psoBox = document.createElement('div');
+            psoBox.className = 'arch-box';
+            psoBox.innerHTML = 'PSO Algorithm';
+            psoBox.style.width = '25%';
+            psoBox.style.height = '20%';
+            psoBox.style.left = '65%';
+            psoBox.style.top = '10%';
+            psoBox.style.backgroundColor = 'rgba(140, 67, 255, 0.1)';
+            psoBox.style.border = '2px solid var(--secondary)';
+            container.appendChild(psoBox);
+            
+            // PSO Components
+            const psoComponents = [
+                { name: 'Particle Initialization', left: '70%', top: '35%', width: '15%', height: '15%' },
+                { name: 'Fitness Evaluation', left: '70%', top: '55%', width: '15%', height: '15%' },
+                { name: 'Position Update', left: '70%', top: '75%', width: '15%', height: '15%' }
+            ];
+            
+            psoComponents.forEach(comp => {
+                const box = document.createElement('div');
+                box.className = 'arch-box';
+                box.innerHTML = comp.name;
+                box.style.width = comp.width;
+                box.style.height = comp.height;
+                box.style.left = comp.left;
+                box.style.top = comp.top;
+                box.style.backgroundColor = 'rgba(140, 67, 255, 0.05)';
+                box.style.border = '1px solid var(--secondary)';
+                container.appendChild(box);
+                
+                // Arrow from PSO to component
+                if (comp.name === 'Particle Initialization') {
+                    createArrow(container, 
+                        parseInt(psoBox.style.left) + parseInt(psoBox.style.width) / 2, 
+                        parseInt(psoBox.style.top) + parseInt(psoBox.style.height), 
+                        parseInt(comp.left) + parseInt(comp.width) / 2, 
+                        parseInt(comp.top),
+                        'var(--secondary)'
+                    );
+                } else {
+                    const prevComp = psoComponents[psoComponents.indexOf(comp) - 1];
+                    createArrow(container, 
+                        parseInt(prevComp.left) + parseInt(prevComp.width) / 2, 
+                        parseInt(prevComp.top) + parseInt(prevComp.height), 
+                        parseInt(comp.left) + parseInt(comp.width) / 2, 
+                        parseInt(comp.top),
+                        'var(--secondary)'
+                    );
+                }
+            });
+            
+            // Combined Architecture
+            const combinedBox = document.createElement('div');
+            combinedBox.className = 'arch-box combined-highlight';
+            combinedBox.innerHTML = 'CNN + PSO Integration';
+            combinedBox.style.width = '30%';
+            combinedBox.style.height = '20%';
+            combinedBox.style.left = '35%';
+            combinedBox.style.top = '45%';
+            combinedBox.style.backgroundColor = 'rgba(40, 167, 69, 0.1)';
+            combinedBox.style.border = '2px solid var(--success)';
+            combinedBox.style.zIndex = '10';
+            container.appendChild(combinedBox);
+            
+            // Arrows to combined box
+            createArrow(container, 
+                parseInt(cnnComponents[2].left) + parseInt(cnnComponents[2].width), 
+                parseInt(cnnComponents[2].top) + parseInt(cnnComponents[2].height) / 2, 
+                parseInt(combinedBox.style.left), 
+                parseInt(combinedBox.style.top) + parseInt(combinedBox.style.height) / 2,
+                'var(--primary)'
+            );
+            
+            createArrow(container, 
+                parseInt(psoComponents[2].left), 
+                parseInt(psoComponents[2].top) + parseInt(psoComponents[2].height) / 2, 
+                parseInt(combinedBox.style.left) + parseInt(combinedBox.style.width), 
+                parseInt(combinedBox.style.top) + parseInt(combinedBox.style.height) / 2,
+                'var(--secondary)'
+            );
+            
+            // Output
+            const outputBox = document.createElement('div');
+            outputBox.className = 'arch-box';
+            outputBox.innerHTML = 'High Accuracy Detection';
+            outputBox.style.width = '30%';
+            outputBox.style.height = '15%';
+            outputBox.style.left = '35%';
+            outputBox.style.top = '75%';
+            outputBox.style.backgroundColor = 'rgba(40, 167, 69, 0.05)';
+            outputBox.style.border = '1px solid var(--success)';
+            container.appendChild(outputBox);
+            
+            // Arrow from combined to output
+            createArrow(container, 
+                parseInt(combinedBox.style.left) + parseInt(combinedBox.style.width) / 2, 
+                parseInt(combinedBox.style.top) + parseInt(combinedBox.style.height), 
+                parseInt(outputBox.style.left) + parseInt(outputBox.style.width) / 2, 
+                parseInt(outputBox.style.top),
+                'var(--success)'
+            );
+        }
+        
+        function createArrow(container, fromX, fromY, toX, toY, color) {
+            const arrow = document.createElement('div');
+            arrow.className = 'arch-arrow';
+            
+            // Calculate length and angle
+            const dx = toX - fromX;
+            const dy = toY - fromY;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            // Position and rotate
+            arrow.style.width = `${length}px`;
+            arrow.style.left = `${fromX}%`;
+            arrow.style.top = `${fromY}%`;
+            arrow.style.transform = `rotate(${angle}deg)`;
+            arrow.style.backgroundColor = color;
+            
+            container.appendChild(arrow);
+        }
+        
+        // Applications Menu Functions
+        function setupApplicationsMenu() {
+            const appTabs = document.querySelectorAll('.app-tab');
+            const appContents = document.querySelectorAll('.app-content');
+            
+            // Hide all content sections initially
+            appContents.forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // Set up tab click handlers
+            appTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    appTabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Hide all content sections
+                    appContents.forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    // Show the corresponding content section
+                    const appId = this.getAttribute('data-app');
+                    
+                    // Show the selected content
+                    document.getElementById('app-' + appId).classList.add('active');
+                    
+                    // Create particles for the app demo
+                    createAppParticles(appId);
+                });
+            });
+            
+            // Set default active tab
+            if (appTabs.length > 0) {
+                appTabs[0].click();
+            }
+        }
+        
+        // Create particles for application demos
+        function createAppParticles(appId) {
+            const container = document.getElementById(appId + '-particles');
+            if (!container) return;
+            
+            // Clear existing particles
+            container.innerHTML = '';
+            
+            // Create new particles
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'app-demo-particle';
+                
+                // Random position
+                const left = Math.random() * 100;
+                const top = Math.random() * 100;
+                const size = Math.random() * 4 + 2;
+                const opacity = Math.random() * 0.5 + 0.1;
+                
+                particle.style.left = `${left}%`;
+                particle.style.top = `${top}%`;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.opacity = opacity;
+                
+                // Different colors based on app
+                switch(appId) {
+                    case 'traffic':
+                        particle.style.backgroundColor = 'var(--primary)';
+                        break;
+                    case 'security':
+                        particle.style.backgroundColor = 'var(--secondary)';
+                        break;
+                    case 'parking':
+                        particle.style.backgroundColor = 'var(--success)';
+                        break;
+                    case 'toll':
+                        particle.style.backgroundColor = 'var(--info)';
+                        break;
+                    case 'law':
+                        particle.style.backgroundColor = 'var(--accent)';
+                        break;
+                    default:
+                        particle.style.backgroundColor = 'var(--primary)';
+                }
+                
+                container.appendChild(particle);
+                
+                // Animate particle
+                animateAppParticle(particle);
+            }
+        }
+        
+        function animateAppParticle(particle) {
+            // Current position
+            const currentLeft = parseFloat(particle.style.left);
+            const currentTop = parseFloat(particle.style.top);
+            
+            // Random movement
+            const newLeft = currentLeft + (Math.random() - 0.5) * 2;
+            const newTop = currentTop + (Math.random() - 0.5) * 2;
+            
+            // Keep within bounds
+            const boundedLeft = Math.max(0, Math.min(100, newLeft));
+            const boundedTop = Math.max(0, Math.min(100, newTop));
+            
+            // Update position
+            particle.style.left = `${boundedLeft}%`;
+            particle.style.top = `${boundedTop}%`;
+            
+            // Continue animation
+            setTimeout(() => {
+                animateAppParticle(particle);
+            }, 100);
+        }
+        
+        // Dynamic explanation typing effect
+        function setupTypingEffects() {
+            const explanations = {
+                'traffic': "AI analyzes real-time traffic data to predict congestion patterns and optimize traffic flow.",
+                'security': "AI-powered security systems can identify unauthorized vehicles and alert security personnel in real-time.",
+                'parking': "AI systems track parking space availability and guide drivers to open spots, reducing search time by up to 30%.",
+                'toll': "AI-powered toll systems can process vehicles at highway speeds, eliminating the need to slow down or stop at toll booths.",
+                'law': "AI systems can scan thousands of vehicles per hour, instantly alerting officers when vehicles of interest are detected."
+            };
+            
+            // Reset and start typing animations when tab is clicked
+            document.querySelectorAll('.app-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const appId = this.getAttribute('data-app');
+                    const explanationElement = document.getElementById(appId + '-explanation');
+                    
+                    if (explanationElement) {
+                        explanationElement.textContent = '';
+                        explanationElement.classList.remove('typing-effect');
+                        
+                        setTimeout(() => {
+                            explanationElement.textContent = explanations[appId];
+                            explanationElement.classList.add('typing-effect');
+                        }, 100);
+                    }
+                });
+            });
+        }
+        
+        // AI Shine Effects
+        function setupShineEffects() {
+            // Header shine effect
+            setInterval(() => {
+                const headerShine = document.querySelector('header .ai-shine');
+                if (headerShine) {
+                    headerShine.style.animation = 'none';
+                    setTimeout(() => {
+                        headerShine.style.animation = 'shine-effect 8s infinite';
+                    }, 100);
+                }
+            }, 8000);
+            
+            // Footer shine effect
+            setInterval(() => {
+                const footerShine = document.querySelector('footer .ai-shine');
+                if (footerShine) {
+                    footerShine.style.animation = 'none';
+                    setTimeout(() => {
+                        footerShine.style.animation = 'shine-effect 8s infinite';
+                    }, 100);
+                }
+            }, 8000);
+            
+            // Button shine effects
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('mouseenter', function() {
+                    const shine = this.querySelector('.ai-shine');
+                    if (shine) {
+                        shine.style.animation = 'shine-effect 1s';
+                    }
+                });
+            });
+        }
+        
+        // Initialize all animations and demos
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set up intersection observers for animations
+            const cnnObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        createCNNAnimation();
+                        cnnObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.5 });
+            
+            const psoObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        createPSOAnimation();
+                        psoObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.5 });
+            
+            const architectureObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        createArchitectureDiagram();
+                        architectureObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.5 });
+            
+            cnnObserver.observe(document.getElementById('cnn-animation'));
+            psoObserver.observe(document.getElementById('pso-animation'));
+            architectureObserver.observe(document.getElementById('architecture-diagram'));
+            
+            // Set up button listeners
+            document.getElementById('cnn-only-btn').addEventListener('click', startCNNDemo);
+            document.getElementById('pso-only-btn').addEventListener('click', startPSODemo);
+            document.getElementById('combined-btn').addEventListener('click', startCombinedDemo);
+            document.getElementById('reset-demo').addEventListener('click', resetDemo);
+            
+            // Set active class for buttons
+            document.querySelectorAll('.control-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.control-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // Setup nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const id = this.getAttribute('href').substring(1);
+                    scrollToSection(id);
+                });
+            });
+            
+            // Setup applications menu
+            setupApplicationsMenu();
+            
+            // Setup typing effects
+            setupTypingEffects();
+            
+            // Setup shine effects
+            setupShineEffects();
+            
+            // Trigger section shine effects periodically
+            setInterval(() => {
+                const visibleSections = document.querySelectorAll('section.visible');
+                if (visibleSections.length > 0) {
+                    const randomSection = visibleSections[Math.floor(Math.random() * visibleSections.length)];
+                    const shine = randomSection.querySelector('.section-shine');
+                    if (shine) {
+                        shine.style.animation = 'none';
+                        setTimeout(() => {
+                            shine.style.animation = 'shine-effect 3s';
+                        }, 100);
+                    }
+                }
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
